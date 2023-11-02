@@ -77,15 +77,38 @@ module user_proj_example #(
     wire [`MPRJ_IO_PADS-1:0] io_oeb;
 
     
+    // design
+    wire [31:0] Do0;
+    wire [3:0] we;
+    
+    reg [3:0] cnt;
+    
+    assign wbs_dat_o = (cnt==4'd12) ? Do0 : 0;
+    
+    always@(posedge wb_clk_i) begin
+        if(wb_rst_i) 
+            cnt <= 4'd1;
+        else if(cnt == 4'd12)
+            cnt <= 4'd1;
+        else if(wbs_cyc_i == 1 && cnt == 4'd1)
+            cnt <= cnt + 4'd1;
+        else if(cnt != 4'd1)
+            cnt <= cnt + 4'd1;
+    end
+   
+    assign wbs_ack_o = (cnt==4'd12)? 1 : 0;
 
+    assign we = (cnt>=4'd10) ? {4{wbs_we_i}} : 0;
+ 
     bram user_bram (
-        .CLK(clk),
-        .WE0(),
-        .EN0(),
-        .Di0(),
-        .Do0(),
-        .A0()
+        .CLK(wb_clk_i),
+        .WE0(we),
+        .EN0(~wb_rst_i),
+        .Di0(wbs_dat_i),
+        .Do0(Do0),
+        .A0(wbs_adr_i)
     );
+
 
 endmodule
 
